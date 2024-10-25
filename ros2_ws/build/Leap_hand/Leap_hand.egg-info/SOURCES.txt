@@ -1,6 +1,7 @@
 package.xml
 setup.cfg
 setup.py
+Leap_hand/GestureDetector.py
 Leap_hand/__init__.py
 Leap_hand.egg-info/PKG-INFO
 Leap_hand.egg-info/SOURCES.txt
