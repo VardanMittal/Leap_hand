@@ -76,6 +76,22 @@ class GestureClassifierNode(Node):
         # Add logic to check if landmarks represent "scissors" gesture
         return False  # Replace with actual logic
 
+def detect_gesture(landmarks):
+    thumb_tip = landmarks[mp_hands.HandLandmark.THUMB_TIP]
+    index_tip = landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP]
+    middle_tip = landmarks[mp_hands.HandLandmark.MIDDLE_FINGER_TIP]
+    wrist = landmarks[mp_hands.HandLandmark.WRIST]
+   
+    if (is_finger_closed(thumb_tip, wrist) and
+        is_finger_closed(index_tip, wrist) and
+        is_finger_closed(middle_tip, wrist)):
+        return "rock"
+    elif (is_finger_closed(thumb_tip, wrist) and
+          not is_finger_closed(index_tip, wrist) and
+          not is_finger_closed(middle_tip, wrist)):
+        return "scissors"
+    else:
+        return "paper"
     def destroy_node(self):
         self.cap.release()
         cv2.destroyAllWindows()
