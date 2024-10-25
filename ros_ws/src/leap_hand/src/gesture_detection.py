@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
@@ -16,9 +17,6 @@ class GestureClassifierNode(Node):
                                          max_num_hands=1,
                                          min_detection_confidence=0.5,
                                          min_tracking_confidence=0.5)
-        
-        # Gesture map (you can customize this based on your hand landmarks analysis)
-        self.gesture_map = {0: "rock", 1: "paper", 2: "scissors"}
         
         # Initialize webcam
         self.cap = cv2.VideoCapture(0)
@@ -40,15 +38,10 @@ class GestureClassifierNode(Node):
         gesture = "unknown"
         
         if results.multi_hand_landmarks:
-            # Detect gesture based on landmarks (simple logic for demonstration)
+            # Detect gesture based on landmarks
             hand_landmarks = results.multi_hand_landmarks[0]
-            if self.is_rock(hand_landmarks):
-                gesture = "rock"
-            elif self.is_paper(hand_landmarks):
-                gesture = "paper"
-            elif self.is_scissors(hand_landmarks):
-                gesture = "scissors"
-                
+            gesture = self.detect_gesture(hand_landmarks.landmark)
+            
             # Draw hand landmarks on frame
             for hand_landmark in results.multi_hand_landmarks:
                 mp.solutions.drawing_utils.draw_landmarks(frame, hand_landmark, self.mp_hands.HAND_CONNECTIONS)
@@ -64,34 +57,28 @@ class GestureClassifierNode(Node):
         cv2.imshow("Gesture Detection", frame)
         cv2.waitKey(1)
 
-    def is_rock(self, landmarks):
-        # Add logic to check if landmarks represent "rock" gesture
-        return False  # Replace with actual logic
+    def detect_gesture(self, landmarks):
+        thumb_tip = landmarks[mp_hands.HandLandmark.THUMB_TIP]
+        index_tip = landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP]
+        middle_tip = landmarks[mp_hands.HandLandmark.MIDDLE_FINGER_TIP]
+        wrist = landmarks[mp_hands.HandLandmark.WRIST]
+       
+        if (self.is_finger_closed(thumb_tip, wrist) and
+            self.is_finger_closed(index_tip, wrist) and
+            self.is_finger_closed(middle_tip, wrist)):
+            return "rock"
+        elif (self.is_finger_closed(thumb_tip, wrist) and
+              not self.is_finger_closed(index_tip, wrist) and
+              not self.is_finger_closed(middle_tip, wrist)):
+            return "scissors"
+        else:
+            return "paper"
 
-    def is_paper(self, landmarks):
-        # Add logic to check if landmarks represent "paper" gesture
-        return False  # Replace with actual logic
+    def is_finger_closed(self, finger_tip, wrist):
+        # Implement a method to determine if a finger is closed
+        distance = np.linalg.norm(np.array([finger_tip.x, finger_tip.y]) - np.array([wrist.x, wrist.y]))
+        return distance < 0.1  # Adjust threshold as needed
 
-    def is_scissors(self, landmarks):
-        # Add logic to check if landmarks represent "scissors" gesture
-        return False  # Replace with actual logic
-
-def detect_gesture(landmarks):
-    thumb_tip = landmarks[mp_hands.HandLandmark.THUMB_TIP]
-    index_tip = landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP]
-    middle_tip = landmarks[mp_hands.HandLandmark.MIDDLE_FINGER_TIP]
-    wrist = landmarks[mp_hands.HandLandmark.WRIST]
-   
-    if (is_finger_closed(thumb_tip, wrist) and
-        is_finger_closed(index_tip, wrist) and
-        is_finger_closed(middle_tip, wrist)):
-        return "rock"
-    elif (is_finger_closed(thumb_tip, wrist) and
-          not is_finger_closed(index_tip, wrist) and
-          not is_finger_closed(middle_tip, wrist)):
-        return "scissors"
-    else:
-        return "paper"
     def destroy_node(self):
         self.cap.release()
         cv2.destroyAllWindows()
