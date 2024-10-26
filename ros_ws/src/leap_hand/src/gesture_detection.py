@@ -9,7 +9,7 @@ import mediapipe as mp
 class GestureClassifierNode(Node):
     def __init__(self):
         super().__init__('gesture_classifier')
-        self.publisher_ = self.create_publisher(String, 'robot_gesture', 10)
+        self.publisher_ = self.create_publisher(String, 'human_gesture', 10)
         
         # Initialize MediaPipe Hands for hand gesture recognition
         self.mp_hands = mp.solutions.hands
@@ -57,27 +57,30 @@ class GestureClassifierNode(Node):
         cv2.imshow("Gesture Detection", frame)
         cv2.waitKey(1)
 
-    def detect_gesture(self, landmarks):
-        thumb_tip = landmarks[mp_hands.HandLandmark.THUMB_TIP]
-        index_tip = landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP]
-        middle_tip = landmarks[mp_hands.HandLandmark.MIDDLE_FINGER_TIP]
-        wrist = landmarks[mp_hands.HandLandmark.WRIST]
-       
-        if (self.is_finger_closed(thumb_tip, wrist) and
-            self.is_finger_closed(index_tip, wrist) and
-            self.is_finger_closed(middle_tip, wrist)):
-            return "rock"
-        elif (self.is_finger_closed(thumb_tip, wrist) and
-              not self.is_finger_closed(index_tip, wrist) and
-              not self.is_finger_closed(middle_tip, wrist)):
-            return "scissors"
-        else:
-            return "paper"
+    def is_finger_closed(self,finger_tip, wrist):
+        if(wrist.y - finger_tip.y < 0.45):
+            return True
+        return False
 
-    def is_finger_closed(self, finger_tip, wrist):
-        # Implement a method to determine if a finger is closed
-        distance = np.linalg.norm(np.array([finger_tip.x, finger_tip.y]) - np.array([wrist.x, wrist.y]))
-        return distance < 0.1  # Adjust threshold as needed
+    def detect_gesture(self,landmarks):
+        thumb_tip = landmarks[self.mp_hands.HandLandmark.THUMB_TIP]
+        index_tip = landmarks[self.mp_hands.HandLandmark.INDEX_FINGER_TIP]
+        middle_tip = landmarks[self.mp_hands.HandLandmark.MIDDLE_FINGER_TIP]
+        wrist = landmarks[self.mp_hands.HandLandmark.WRIST]
+        ring_tip = landmarks[self.mp_hands.HandLandmark.RING_FINGER_TIP]
+        pinky_tip = landmarks[self.mp_hands.HandLandmark.PINKY_TIP]
+        
+        if (self.is_finger_closed(index_tip, wrist) and
+            self.is_finger_closed(middle_tip, wrist) and self.is_finger_closed(ring_tip, wrist) and self.is_finger_closed(pinky_tip, wrist)):
+            return "rock"
+        elif (not self.is_finger_closed(index_tip, wrist) and
+            not self.is_finger_closed(middle_tip, wrist) and self.is_finger_closed(ring_tip, wrist) and self.is_finger_closed(pinky_tip, wrist)):
+            return "scissors"
+        elif(not self.is_finger_closed(index_tip, wrist) and
+            not self.is_finger_closed(middle_tip, wrist) and not self.is_finger_closed(ring_tip, wrist) and not self.is_finger_closed(pinky_tip, wrist)):
+            return "paper"
+        else:
+            return "unknown"
 
     def destroy_node(self):
         self.cap.release()

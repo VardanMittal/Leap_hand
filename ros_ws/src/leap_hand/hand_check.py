@@ -9,23 +9,30 @@ hands = mp_hands.Hands(max_num_hands=1, min_detection_confidence=0.7)
 # Initialize MediaPipe Drawing
 mp_drawing = mp.solutions.drawing_utils
 
-def detect_gesture(landmarks):
-    # Get the positions of specific landmarks
-    thumb_tip = landmarks[mp_hands.HandLandmark.THUMB_TIP].y
-    index_tip = landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP].y
-    middle_tip = landmarks[mp_hands.HandLandmark.MIDDLE_FINGER_TIP].y
-    ring_tip = landmarks[mp_hands.HandLandmark.RING_FINGER_TIP].y
-    pinky_tip = landmarks[mp_hands.HandLandmark.PINKY_TIP].y
+def is_finger_closed(finger_tip, wrist):
+    if(wrist.y - finger_tip.y < 0.45):
+        return True
+    return False
 
-    # Check for gestures based on finger positions
-    if thumb_tip < index_tip < middle_tip < ring_tip < pinky_tip:  # Open hand
-        return "Paper"
-    elif thumb_tip < index_tip and middle_tip < ring_tip < pinky_tip:  # Scissors
-        return "Scissors"
-    elif index_tip < middle_tip and ring_tip < pinky_tip:  # Closed fist
-        return "Rock"
+def detect_gesture(landmarks):
+    thumb_tip = landmarks[mp_hands.HandLandmark.THUMB_TIP]
+    index_tip = landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP]
+    middle_tip = landmarks[mp_hands.HandLandmark.MIDDLE_FINGER_TIP]
+    wrist = landmarks[mp_hands.HandLandmark.WRIST]
+    ring_tip = landmarks[mp_hands.HandLandmark.RING_FINGER_TIP]
+    pinky_tip = landmarks[mp_hands.HandLandmark.PINKY_TIP]
+    
+    if (is_finger_closed(index_tip, wrist) and
+        is_finger_closed(middle_tip, wrist) and is_finger_closed(ring_tip, wrist) and is_finger_closed(pinky_tip, wrist)):
+        return "rock"
+    elif (not is_finger_closed(index_tip, wrist) and
+        not is_finger_closed(middle_tip, wrist) and is_finger_closed(ring_tip, wrist) and is_finger_closed(pinky_tip, wrist)):
+        return "scissors"
+    elif(not is_finger_closed(index_tip, wrist) and
+        not is_finger_closed(middle_tip, wrist) and not is_finger_closed(ring_tip, wrist) and not is_finger_closed(pinky_tip, wrist)):
+        return "paper"
     else:
-        return "Unknown"
+        return "unknown"
 
 def main():
     cap = cv2.VideoCapture(0)
@@ -72,28 +79,30 @@ import numpy as np
 
 # Initialize MediaPipe Hands
 mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(max_num_hands=1, min_detection_confidence=0.7)
+hands = mp_hands.Hands(max_num_hands=1, min_detection_confidence=0.5)
 
 # Initialize MediaPipe Drawing
 mp_drawing = mp.solutions.drawing_utils
 
-def detect_gesture(landmarks):
-    # Get the positions of specific landmarks
-    thumb_tip = landmarks[mp_hands.HandLandmark.THUMB_TIP].y
-    index_tip = landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP].y
-    middle_tip = landmarks[mp_hands.HandLandmark.MIDDLE_FINGER_TIP].y
-    ring_tip = landmarks[mp_hands.HandLandmark.RING_FINGER_TIP].y
-    pinky_tip = landmarks[mp_hands.HandLandmark.PINKY_TIP].y
+# def detect_gesture(landmarks):
+#     # Get the positions of specific landmarks
+#     thumb_tip = landmarks[mp_hands.HandLandmark.THUMB_TIP].y
+#     index_tip = landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP].y
+#     middle_tip = landmarks[mp_hands.HandLandmark.MIDDLE_FINGER_TIP].y
+#     ring_tip = landmarks[mp_hands.HandLandmark.RING_FINGER_TIP].y
+#     pinky_tip = landmarks[mp_hands.HandLandmark.PINKY_TIP].y
 
-    # Check for gestures based on finger positions
-    if thumb_tip < index_tip < middle_tip < ring_tip < pinky_tip:  # Open hand
-        return "Paper"
-    elif thumb_tip < index_tip and middle_tip < ring_tip < pinky_tip:  # Scissors
-        return "Scissors"
-    elif index_tip < middle_tip and ring_tip < pinky_tip:  # Closed fist
-        return "Rock"
-    else:
-        return "Unknown"
+#     # Check for gestures based on finger positions
+#     if thumb_tip < index_tip < middle_tip < ring_tip < pinky_tip:  # Open hand
+#         return "Paper"
+#     elif thumb_tip < index_tip and middle_tip < ring_tip < pinky_tip:  # Scissors
+#         return "Scissors"
+#     elif index_tip < middle_tip and ring_tip < pinky_tip:  # Closed fist
+#         return "Rock"
+#     else:
+#         return "Unknown"
+
+
 
 def main():
     cap = cv2.VideoCapture(0)
