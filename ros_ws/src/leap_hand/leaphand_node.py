@@ -41,7 +41,23 @@ class LeapNode:
         self.kD = float(rospy.get_param('/leaphand_node/kD', 200.0))
         self.curr_lim = float(rospy.get_param('/leaphand_node/curr_lim', 350.0)) #don't go past 600ma on this, or it'll overcurrent sometimes for regular, 350ma for lite.
         self.ema_amount = 0.2
-        self.prev_pos = self.pos = self.curr_pos = lhu.allegro_to_LEAPhand(np.zeros(16))
+        self.prev_pos = self.curr_pos = lhu.allegro_to_LEAPhand(np.zeros(16))
+        self.pos = np.zeros(16)
+        self.gesture_positions = {
+            "rock": np.array([np.radians(180), np.radians(240), np.radians(261), np.radians(253),
+                              np.radians(180), np.radians(236), np.radians(295), np.radians(243),
+                              np.radians(180), np.radians(242), np.radians(270), np.radians(255),
+                              np.radians(149), np.radians(87), np.radians(268), np.radians(253)]),
+       
+            "paper": np.array([np.radians(180)] * 16),  # All joints flat for open fingers
+
+            "scissors": np.array([np.radians(180), np.radians(180), np.radians(180),
+                                  np.radians(180), np.radians(180), np.radians(180),
+                                  np.radians(180), np.radians(180), np.radians(180),
+                                  np.radians(242), np.radians(270), np.radians(255),
+                                  np.radians(149), np.radians(87), np.radians(268),
+                                  np.radians(253)]),
+        }
         
         #subscribes to a variety of sources that can command the hand, and creates services that can give information about the hand out
         rospy.Subscriber("/leaphand_node/cmd_leap", JointState, self._receive_pose)
@@ -78,10 +94,24 @@ class LeapNode:
             rospy.spin()
 
     #Receive LEAP pose and directly control the robot
+    def gesture_callback(self, msg):
+        gesture = msg.data
+        rospy.loginfo(f"Received gesture: {gesture}")
+
+        # Set joint positions based on the detected gesture
+        if gesture == "rock":
+            self.pos  = self.gesture_positions["rock"]
+        elif gesture == "paper":
+            self.pos = self.gesture_positions["paper"]
+        elif gesture == "scissors":
+            self.pos = self.gesture_positions["scissors"]
+
+        return self.pos
+
     def _receive_pose(self, pose):
         pose = pose.position
         self.prev_pos = self.curr_pos
-        self.curr_pos = np.array(pose)
+        self.curr_pos = self.pos
         self.dxl_client.write_desired_pos(self.motors, self.curr_pos)
     #Allegro compatibility, first read the allegro publisher and then convert to leap
     def _receive_allegro(self, pose):
@@ -105,6 +135,7 @@ class LeapNode:
     #Service that reads and returns the effort/current of the robot in LEAP Embodiment
     def eff_srv(self, req):
         return {"effort": self.dxl_client.read_cur()}
+    
 #init the arm node
 def main(**kwargs):
     rospy.init_node("leaphand_node")

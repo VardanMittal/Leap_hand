@@ -4,5 +4,9 @@
             <param name="kI" type="double" value="0.0" />
             <param name="kD" type="double" value="200.0" />
             <param name="curr_lim" type="double" value="500.0" />
-      </node>   
+      </node> 
+      <node pkg="leap_hand" name="game" type="main.py" output="screen">
+      </node> 
+      <node pkg="leap_hand" name="gesture" type="gesture_detection.py" output="screen">
+      </node> 
 </launch>
